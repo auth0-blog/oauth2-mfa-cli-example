@@ -1,0 +1,26 @@
+{
+  "name": "oauth2-mfa-cli",
+  "version": "1.0.0",
+  "description": "An example for working with the OAuth 2.0 MFA specification.",
+  "main": "src/index.js",
+  "dependencies": {
+    "delay": "^2.0.0",
+    "esm": "^3.0.17",
+    "inquirer": "^5.2.0",
+    "minimist": "^1.2.0",
+    "request": "^2.85.0",
+    "request-promise-native": "^1.0.5"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/index.js"
+  },
+  "keywords": [
+    "oauth2",
+    "mfa",
+    "auth0"
+  ],
+  "author": "Auth0, Inc.",
+  "license": "ISC"
+}
