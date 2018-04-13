@@ -41,6 +41,8 @@ Subcommands for 'associate':
 
   delete          Deletes an authenticator.
 
+  delete-all      Delete all authenticators.
+
 `;
 
 async function run() {

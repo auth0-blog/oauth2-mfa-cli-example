@@ -55,7 +55,8 @@ strongAuthGrantRequest(settings,
   return request(opts);
 }
 
-export async function resourceOwnerGrantRequest(settings, credentials, scope) {
+export async function
+resourceOwnerGrantRequest(settings, credentials, scope, audience) {
   const opts = {
     method: 'POST',
     uri: `https://${settings.domain}/oauth/token`,    
@@ -70,6 +71,10 @@ export async function resourceOwnerGrantRequest(settings, credentials, scope) {
     simple: false,
     resolveWithFullResponse: true
   };
+
+  if(audience) {
+    opts.body.audience = audience;
+  }
 
   return request(opts);
 }
@@ -110,8 +115,11 @@ export default async function token() {
 
   // 2. Perform resource owner password credentials request to the /token
   // endpoint.
-  let response =
-    await resourceOwnerGrantRequest(settings, credentials, 'openid profile');  
+  let response = await resourceOwnerGrantRequest(
+    settings,
+    credentials,
+    'openid profile enroll read:authenticators remove:authenticators',
+    `https://${settings.domain}/mfa/`);
   
   if(response.body.access_token) {
     console.log('Logged in (MFA is disabled). Note that this token cannot ' + 
@@ -128,7 +136,7 @@ export default async function token() {
     return;
   }
 
-  console.log(`MFA required. MFA token is ${response.body.mfa_token}`);
+  console.log(`MFA required. Got MFA token!`);
 
   // 3. MFA required, perform request to 'challenge' endpoint. Accept all
   // authenticator types.  

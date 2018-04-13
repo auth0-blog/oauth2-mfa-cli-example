@@ -4,7 +4,7 @@ const fileName = '.access-token';
 
 export function load() {
   return new Promise((resolve, reject) => {
-    fs.readFile(`./${fileName}`, (err, data) => {
+    fs.readFile(`./${fileName}`, 'utf8', (err, data) => {
       resolve(err ? 'null' : data);
     });
   });
