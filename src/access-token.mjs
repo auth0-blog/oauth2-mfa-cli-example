@@ -26,7 +26,11 @@ export function clear() {
   return new Promise((resolve, reject) => {
     fs.unlink(`./${fileName}`, err => {
       if(err){ 
-        reject(err);
+        if(err.code === 'ENOENT') {
+          resolve();
+        } else {
+          reject(err);
+        }
       } else {
         resolve();
       }
