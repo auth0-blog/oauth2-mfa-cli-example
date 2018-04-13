@@ -1,5 +1,5 @@
-import token from './token.mjs';
-import associate from './associate.mjs';
+import token from './token-endpoint.mjs';
+import associate from './associate-endpoint.mjs';
 import { setup } from './settings.mjs';
 import { clear } from './access-token.mjs';
 
@@ -71,4 +71,7 @@ process.on('SIGTERM', () => {
   process.exit();
 });
 
-run().then(() => process.exit());
+run().then(() => process.exit(), e => {
+  console.log(e); 
+  process.exit(-1);
+});

@@ -1,11 +1,12 @@
-import { load } from './access-token.mjs';
-import token from './token.mjs';
+import { load, save } from './access-token.mjs';
+import token, { strongAuthGrantRequest } from './token-endpoint.mjs';
 import { get as getSettings } from './settings.mjs';
 
 import request from 'request-promise-native';
 import inquirer from 'inquirer';
 
-async function listAuthenticators(settings, accessToken) {
+export async function
+associateListAuthenticatorsRequest(settings, accessToken) {
   console.log('Getting list of authenticators...');
 
   const opts = {
@@ -25,7 +26,8 @@ async function listAuthenticators(settings, accessToken) {
   }
 }
 
-async function deleteAuthenticator(settings, accessToken) {
+export async function
+associateDeleteAuthenticatorRequest(settings, accessToken) {
   const answer = await inquirer.prompt([{
     name: 'id',
     message: 'Please enter the authenticator ID',
@@ -52,7 +54,7 @@ async function deleteAuthenticator(settings, accessToken) {
   }
 }
 
-async function newAuthenticator(settings, accessToken) {
+export async function associateNewAuthenticatorRequest(settings, accessToken) {
   const answers = await inquirer.prompt([{
     type: 'list',
     name: 'type',
@@ -80,12 +82,12 @@ async function newAuthenticator(settings, accessToken) {
     authenticator_types: [answers.type],
     phone_number: answers.phone,
     email: answers.email,
-    oobChannels: answers.type === 'oob' ? [answers.oobChannel] : undefined
+    oob_channels: answers.type === 'oob' ? [answers.oobChannel] : undefined
   };
 
-  const opts = {
+  let opts = {
     method: 'POST',
-    uri: `https://${settings.domain}/mfa/authenticators`,
+    uri: `https://${settings.domain}/mfa/associate`,
     headers: {
       'Authorization': `Bearer ${accessToken}`
     },
@@ -93,21 +95,49 @@ async function newAuthenticator(settings, accessToken) {
     json: true
   };
 
+  let oobCode;
   try {
     const response = await request(opts);
     
-    console.log('Authenticator associated:');
-    
+    console.log('Authenticator partially associated, confirmation required.');
+
+    oobCode = response.oob_code;
+
     if(response.barcode_uri) {
       console.log(`- Barcode/QR URL: ${response.barcode_uri}`);    
     }
     
     if(response.recovery_codes) {
       console.log(`- Recovery codes: ${response.recovery_codes}`);
-    }
+    }    
   } catch(e) {
     console.log('Failed to associate authenticator, response: ', e);
+    return;
   }
+
+  // Confirm association by making request to /token endpoint.
+  let response;
+
+  const bindingMethod = answers.oobChannel === 'sms' ? 'prompt' : null;
+  do {
+    response = await strongAuthGrantRequest(settings,
+                                            accessToken,
+                                            answers.type,
+                                            bindingMethod,
+                                            oobCode);
+  } while(response.body.error &&
+          response.body.error === 'authorization_pending' &&
+          await delay(5000, true));
+  
+  if(response.body.error || !response.body.access_token) {
+    console.log('Association confirmation failed: ', response);
+    return;
+  }
+
+  console.log('Association confirmed.');
+  console.log(`Got access token, expires in: ${response.body.expires_in}`);
+  console.log(`The access token is: ${response.body.access_token}`);
+  await save(response.body.access_token);
 }
 
 export default async function associate(action) {
@@ -123,12 +153,12 @@ export default async function associate(action) {
 
   switch(action) {
     case 'new':
-      return newAuthenticator(settings, accessToken);
+      return associateNewAuthenticatorRequest(settings, accessToken);
       break;
     case 'delete':
-      return deleteAuthenticator(settings, accessToken);
+      return associateDeleteAuthenticatorRequest(settings, accessToken);
       break;
     default:
-      return listAuthenticators(settings, accessToken);
+      return associateListAuthenticatorsRequest(settings, accessToken);
   }
 }
