@@ -122,8 +122,7 @@ export default async function token() {
     `https://${settings.domain}/mfa/`);
   
   if(response.body.access_token) {
-    console.log('Logged in (MFA is disabled). Note that this token cannot ' + 
-                'be used for the /associate endpoint');
+    console.log('Logged in (MFA is disabled).');
 
     await save(response.body.access_token);
     printAccessToken(response.body.access_token);

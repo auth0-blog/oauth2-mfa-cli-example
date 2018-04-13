@@ -110,7 +110,7 @@ export async function associateNewAuthenticatorRequest(settings, accessToken) {
 
     if(response.barcode_uri) {
       console.log(`- Barcode/QR URL: ${response.barcode_uri}`);
-      console.log('Use this URL in your browser:\n');
+      console.log('  Use this URL in your browser:\n');
       // Warning: using an external URL to share this is a SECURITY ISSUE.
       // Do not do this in production.
       console.log('https://chart.googleapis.com/' +
@@ -158,10 +158,10 @@ export async function associateDeleteAllAuthenticators(settings, accessToken) {
   
   const requests = [];
   for(const authenticator of authenticators) {
-    if(authenticator.id.indexOf('recovery-code') !== -1) {
+    if(authenticator.authenticator_type === 'recovery-code') {
       continue;
     }
-    
+
     requests.push(
       associateDeleteAuthenticatorRequest(
         settings, accessToken, authenticator.id));
