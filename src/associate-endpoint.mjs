@@ -4,6 +4,7 @@ import { get as getSettings } from './settings.mjs';
 
 import request from 'request-promise-native';
 import inquirer from 'inquirer';
+import delay from 'delay';
 
 export async function
 associateListAuthenticatorsRequest(settings, accessToken) {
@@ -131,15 +132,20 @@ export async function associateNewAuthenticatorRequest(settings, accessToken) {
   let response;
 
   const bindingMethod = answers.oobChannel === 'sms' ? 'prompt' : null;
-  do {
+  while(true) {
     response = await strongAuthGrantRequest(settings,
                                             accessToken,
                                             answers.type,
                                             bindingMethod,
                                             oobCode);
-  } while(response.body.error &&
-          response.body.error === 'authorization_pending' &&
-          await delay(5000, true));
+    
+    if(response.body.error === 'authorization_pending') {
+      console.log('Authorization pending, retrying in 5 seconds...');
+      await delay(5000);
+    } else {
+      break;
+    }
+  }  
   
   if(response.body.error || !response.body.access_token) {
     console.log('Association confirmation failed: ', response);

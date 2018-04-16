@@ -167,15 +167,21 @@ export default async function token() {
   const challengeType = response.body.challenge_type;
   const bindingMethod = response.body.binding_method;
   const oobCode = response.body.oob_code;
-  do {
+  
+  while(true) {
     response = await strongAuthGrantRequest(settings,
                                             mfaToken,
                                             challengeType,
                                             bindingMethod,
                                             oobCode);
-  } while(response.body.error &&
-          response.body.error === 'authorization_pending' &&
-          await delay(5000, true));
+
+    if(response.body.error === 'authorization_pending') {
+      console.log('Authorization pending, retrying in 5 seconds...');
+      await delay(5000);
+    } else {
+      break;
+    }
+  }  
 
   if(response.body.error) {
     console.log('Strong grant authorization request failed, response: ',
