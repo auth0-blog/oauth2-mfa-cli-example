@@ -45,14 +45,18 @@ Subcommands for 'associate':
 
 `;
 
+function isVerbose() {
+  return process.argv.includes('--verbose') || process.argv.includes('-v');
+}
+
 async function run() {
   switch(process.argv[2]) {
     case 'login':
     case 'token':
-      return token();
+      return token(isVerbose());
     case 'associate':
     case 'authenticators':
-      return associate(process.argv[3]);
+      return associate(process.argv[3], isVerbose());
     case 'setup':
       return setup();
     case 'logout':

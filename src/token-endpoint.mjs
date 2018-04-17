@@ -2,16 +2,20 @@ import { load, save, clear } from './access-token.mjs';
 import { get as getSettings } from './settings.mjs';
 import { associateNewAuthenticatorRequest } from './associate-endpoint.mjs';
 
-import request from 'request-promise-native';
+import requestPrinter from './request-printer.mjs';
+
 import inquirer from 'inquirer';
 import delay from 'delay';
+
+const request = requestPrinter(console.error);
 
 export async function 
 strongAuthGrantRequest(settings, 
                        mfaToken,
                        challengeType,
                        bindingMethod,
-                       oobCode) {
+                       oobCode, 
+                       verbose) {
   const body = {};
   
   switch(challengeType) {
@@ -52,11 +56,15 @@ strongAuthGrantRequest(settings,
     resolveWithFullResponse: true
   };
 
+  if(verbose === false) {
+    verbose: false
+  }
+
   return request(opts);
 }
 
 export async function
-resourceOwnerGrantRequest(settings, credentials, scope, audience) {
+resourceOwnerGrantRequest(settings, credentials, scope, audience, verbose) {
   const opts = {
     method: 'POST',
     uri: `https://${settings.domain}/oauth/token`,    
@@ -69,17 +77,22 @@ resourceOwnerGrantRequest(settings, credentials, scope, audience) {
     },
     json: true,
     simple: false,
-    resolveWithFullResponse: true
+    resolveWithFullResponse: true    
   };
 
   if(audience) {
     opts.body.audience = audience;
   }
 
+  if(verbose === false) {
+    verbose: false
+  }
+
   return request(opts);
 }
 
-export async function challengeRequest(settings, mfaToken, challengeTypes) {
+export async function 
+challengeRequest(settings, mfaToken, challengeTypes, verbose) {
   const opts = {
     method: 'POST',
     uri: `https://${settings.domain}/mfa/challenge`,    
@@ -93,10 +106,14 @@ export async function challengeRequest(settings, mfaToken, challengeTypes) {
     resolveWithFullResponse: true
   };
 
+  if(verbose === false) {
+    verbose: false
+  }
+
   return request(opts);  
 }
 
-export default async function token() {
+export default async function token(verbose) {
   const settings = await getSettings();
   let accessToken = await load();
 
@@ -119,7 +136,8 @@ export default async function token() {
     settings,
     credentials,
     'openid profile enroll read:authenticators remove:authenticators',
-    `https://${settings.domain}/mfa/`);
+    `https://${settings.domain}/mfa/`,
+    verbose);
   
   if(response.body.access_token) {
     console.log('Logged in (MFA is disabled).');
@@ -141,7 +159,7 @@ export default async function token() {
   // authenticator types.  
   const mfaToken = response.body.mfa_token;
 
-  response = await challengeRequest(settings, mfaToken, 'otp oob');
+  response = await challengeRequest(settings, mfaToken, 'otp oob', verbose);
   
   if(response.body.error && response.body.error === 'association_required') {
     console.log('An authenticator factor must be associated to continue, ' + 
@@ -173,7 +191,8 @@ export default async function token() {
                                             mfaToken,
                                             challengeType,
                                             bindingMethod,
-                                            oobCode);
+                                            oobCode, 
+                                            verbose);
 
     if(response.body.error === 'authorization_pending') {
       console.log('Authorization pending, retrying in 5 seconds...');
