@@ -57,7 +57,7 @@ strongAuthGrantRequest(settings,
   };
 
   if(verbose === false) {
-    verbose: false
+    opts.verbose = false;
   }
 
   return request(opts);
@@ -85,7 +85,7 @@ resourceOwnerGrantRequest(settings, credentials, scope, audience, verbose) {
   }
 
   if(verbose === false) {
-    verbose: false
+    opts.verbose = false;
   }
 
   return request(opts);
@@ -107,7 +107,7 @@ challengeRequest(settings, mfaToken, challengeTypes, verbose) {
   };
 
   if(verbose === false) {
-    verbose: false
+    opts.verbose = false;
   }
 
   return request(opts);  
